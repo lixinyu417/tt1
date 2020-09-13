@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+    <!--首先要知道，没有访问servlet这个对象不能被创建出来
+           但是我们的需求 是 在服务器启动的时候创建DispatherServlet对象
+           为什么要创建DispatherServlet对象的实例呢？
+           因为DispatherServlet在他的创建过程中，会同时创建springmvc容器对象，
+           读取springmvc配置文件，把这个配置文件的对象都创建好，当用户发起请求时
+           就可以直接使用对象了。
+
+           servlet初始化会执行init（）方法，DispatherServlet在init中{
+              //读取配置文件创建对象
+              webApplicationContext ctx=new ClassPathXmlApplicationContext("springmvc.xml");
+              //把容器对象放在ServletContext中
+              getServletContext().setAttribute(key,ctx);//这样在web容器中就可以使用web对象了
+           }
+
+          启动tomact报错，读取这个文件 /WEB-INF/springmvc-servlet.xml   ，/WEB-INF/myweb-servlet.xml
+          springmvc创建容器对象时，读取配置文件默认是 /WEB-INF/ <servlet-name>标签中的值-servlet.xml
+          这种方式不灵活，我们可以自定义
+       -->
+    <!--声明，注册springmvc的核心对象DispatherServlet-->
+    <servlet>
+        <servlet-name>myweb</servlet-name>
+        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+
+        <!--自定义springmvc读取的配置文件的位置-->
+        <init-param>
+            <!--spring的配置文件的位置的位置的属性-->
+            <param-name>contextConfigLocation</param-name>
+            <!--指定自定义文件的位置-->
+            <param-value>classpath:springmvc.xml</param-value>
+        </init-param>
+        <!--需要中央调度器随着服务器的启动而创建
+          load-on-startup:表示tomcat启动后创建对象的顺序。
+          值是整数，值越小，tomcat创建对象的时间越早。
+          大于等于0的整数。
+          如果有另一个servlet 中也有<load-on-startup>2</load-on-startup>，那么先创建我们这个1的servlet
+
+        -->
+        <load-on-startup>1</load-on-startup>
+
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>myweb</servlet-name>
+        <!--使用框架的时候，url-pattern可以使用两种值
+            1、使用扩展名的方式，语法 *.xxx, xxx是自定义的扩展名。常用方式 *,do , *.action *.mvc等等
+               http://localhost:8080/myweb/some.do
+               http://localhost:8080/myweb/other.do  这两个.do 的请求都交给这个servlet
+
+            2、使用 /
+        -->
+        <url-pattern>*.do</url-pattern>
+    </servlet-mapping>
+</web-app>
